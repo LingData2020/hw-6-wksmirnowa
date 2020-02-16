@@ -59,8 +59,8 @@ In the second experiment, 30 bidialectals (native speakers of Standard and Cypri
 Two kinds of [fillers](https://www.hlp.rochester.edu/resources/BCS152-Tutorial/Fillers.html) were used in both experiments, FillerAcceptable and FillerUnacceptable -- sentences that included well-formed and ungrammatical structures, respectively. In both tasks the ratio of fillers to actual test structures was 2:1.
 
 #### Data 
-```{r, warning=FALSE, message=FALSE}
-suppressMessages(library(tidyverse))
+```{r}
+library(tidyverse)
 
 mono_socio <- read_csv2("https://raw.githubusercontent.com/LingData2019/LingData2020/master/data/greek-word-order-mono_socio.txt")
 mono <- read_csv2("https://raw.githubusercontent.com/LingData2019/LingData2020/master/data/greek-word-order-mono-acceptability-coded-rt.txt")
