@@ -134,7 +134,7 @@ The task featured three conditions: 1. size adjective > nationality adjective, 2
 In the second experiment, 30 bidialectals (native speakers of Standard and Cypriot Greek) were tested in both language varieties, 36 observations per participant, 18 for each variety.
 
 #### Data 
-```{r, warning=FALSE, message=FALSE}
+```{r}
 suppressMessages(library(readr))
 mono <- read_delim("https://dataverse.no/api/access/datafile/:persistentId?persistentId=doi:10.18710/NTLLUF/XAMMNB", delim = ";")
 bidialect <- read_delim("https://dataverse.no/api/access/datafile/:persistentId?persistentId=doi:10.18710/NTLLUF/PQAKFW", delim=";")
