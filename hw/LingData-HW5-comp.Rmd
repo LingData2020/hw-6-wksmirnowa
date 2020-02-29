@@ -1,5 +1,5 @@
 ---
-title: "HW 5: Correlations and linear models"
+title: "HW 5: Correlations and linear models. Tests for categorial variables"
 ---
 
 ```{r setup, include=FALSE}
