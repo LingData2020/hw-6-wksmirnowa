@@ -1,8 +1,8 @@
 ---
 title: "Lab 7. Simple linear regression. Multivariate linear regression. Dummy variables"
 output:
-  pdf_document: default
   html_document: default
+  pdf_document: default
 ---
 
 ```{r setup, include=FALSE}
@@ -111,12 +111,13 @@ How to interpret such an output?
 Intercept is our $\beta_0$ and math is our $\beta_1$, the coefficient before the independent variable Math score. So, we can write a regression equation (try it).
 
 ```{r}
-ggplot(data = scores, aes(x = math, y = science)) + 
+p <- ggplot(data = scores, aes(x = math, y = science)) + 
   geom_point() +
   labs(x = "Math score",
        y = "Science score",
        title = "Students' scores") +
   geom_smooth(method=lm)
+p
 ```
 
 
@@ -162,11 +163,28 @@ ggplot(data = fit1, aes(x = fit1$fitted.values,
   theme_bw()
 ```
 
+* Predict
 Now we can predict `science` for a new dataset. 
 
 ```{r}
 predict(fit1, newdata = data.frame(math = c(44,55,66)))
 ```
+A **prediction interval** reflects the uncertainty around a single value, while a **confidence interval** reflects the uncertainty around the mean prediction values. 
+
+* Confidence interval
+```{r}
+new.math <- data.frame(
+  math = c(44,55,66)
+)
+predict(fit1, newdata = new.math, interval = "confidence")
+```
+By default, the 95% confidence intervals around the mean the predictions are provided.
+
+* Prediction interval plot
+```{r}
+predict(fit1, newdata = new.math, interval = "prediction")
+```
+According to the model fit1, 95% students with the math score of 44 have the science scores between 30.8 and 61.3. A prediction interval is generally much wider than a confidence interval for the same value.
 
 
 ### Multivariate linear regression
@@ -389,4 +407,13 @@ which=3. Scale-Location (Spread-Location)
   -- allows one to check the assumption of equal variance (homoscedasticity). The ideal plot is a horizontal line with equally (randomly) spread points.
   
 which=4. Residuals vs Leverage   
-  -- allows one to reveal influential observations, if any. When cases are outside of the Cook’s distance (dashed line), the cases are influential to the regression results. The regression results will be altered if we exclude those cases.  
+  -- allows one to reveal influential observations, if any. When cases are outside of the Cook’s distance (dashed line), the cases are influential to the regression results. The regression results will be altered if we exclude those cases.
+  
+* Predition intervals on the scatter plot
+```{r}
+band.lower <- suppressWarnings(predict(fit1, type = "response", interval = "prediction"))[,2]
+band.upper <- suppressWarnings(predict(fit1, type = "response", interval = "prediction"))[,3]                                
+p +
+  geom_line(aes(y = band.lower), color = "red", linetype = "dashed") +
+  geom_line(aes(y = band.upper), color = "red", linetype = "dashed")
+```
