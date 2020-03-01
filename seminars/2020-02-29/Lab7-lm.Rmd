@@ -1,13 +1,16 @@
 ---
 title: "Lab 7. Simple linear regression. Multivariate linear regression. Dummy variables"
+output:
+  pdf_document: default
+  html_document: default
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE, message = FALSE)
 ```
 
-
 ```{r}
+#install.packages("GGally")
 library(tidyverse)
 library(GGally) # a useful extension for ggplot2
 library(readr)
@@ -22,18 +25,19 @@ Two hundred observations were randomly sampled from the High School and Beyond s
 
 Variables
 
-`id`: Student ID.
-`gender`: Student???s gender, with levels female and male.
-`race`: Student???s race, with levels african american, asian, hispanic, and white.
-`ses`: Socio economic status of student???s family, with levels low, middle, and high.
-`schtyp`: Type of school, with levels public and private.
-`prog`: Type of program, with levels general, academic, and vocational.
-`read`: Standardized reading score.
-`write`: Standardized writing score.
-`math`: Standardized math score.
-`science`: Standardized science score.
-`socst`: Standardized social studies score.
-Let???s load data first:
+`id`: Student ID.  
+`gender`: Student’s gender, with levels female and male.  
+`race`: Student’s race, with levels african american, asian, hispanic, and white.  
+`ses`: Socio economic status of student’s family, with levels low, middle, and high.  
+`schtyp`: Type of school, with levels public and private.  
+`prog`: Type of program, with levels general, academic, and vocational.  
+`read`: Standardized reading score.  
+`write`: Standardized writing score.  
+`math`: Standardized math score.  
+`science`: Standardized science score.  
+`socst`: Standardized social studies score.  
+
+Let’s load data first:
 
 ```{r}
 educ <- read.csv("https://raw.githubusercontent.com/LingData2019/LingData2020/master/data/education.csv")
@@ -45,15 +49,23 @@ Now let us choose variables that correspond to abilities (`read` and `write`) an
 scores <- educ %>% select(read, write, math, science, socst)
 ```
 
-Let???s create a basic scatterplot matrix, a graph that includes several scatterplots, one for each pair of variables.
+Let’s create a basic scatterplot matrix, a graph that includes several scatterplots, one for each pair of variables.
 
 ```{r}
-pairs(scores)
+pairs(scores) 
+# you can add asp=1 as an argument to make the ratio of y to x equal 1:1
 ```
 
 **Question**: Judging by this graph, can you say which scores have the strongest association? Try to guess the values of correlation coefficient for each pair of variables.
 
-Let???s choose a pair of variables and proceed to formal testing. We will check whether students??? score for Math and Science are associated.
+Now let’s create a more beautiful plot using `GGally` package and check whether your guesses were true:
+
+```{r}
+ggpairs(scores)  # dataset inside
+# try also with the argument upper=list(continuous = "density")
+```
+
+Let’s choose a pair of variables and proceed to formal testing. We will check whether students’ score for Math and Science are associated.
 
 First, create a simple scatterplot for these variables:
 
@@ -81,22 +93,22 @@ Math score and Science score should be associated. Explanation: most fields of S
 cor.test(scores$math, scores$science)
 ```
 
-P-value here is approximately 0, so at the 5% significance level we reject *H0* about the absence of linear association. Thus, we can conclude that Math score and Sciences score are associated. The Pearson???s correlation coefficient here is 0.63, so we can say that the direction of this association is positive (the more is the Math score, the more the Science score is) and its strength is moderate.
+P-value here is approximately 0, so at the 5% significance level we reject *H0* about the absence of linear association. Thus, we can conclude that Math score and Sciences score are associated. The Pearson’s correlation coefficient here is 0.63, so we can say that the direction of this association is positive (the more is the Math score, the more the Science score is) and its strength is moderate.
 
 ### Simple linear regression
 
 Now suppose we are interested in the following thing: how does Science score change (on average) if Math score increases by one point? To answer this question we have to build a linear regression model. In our case it will look like this:
 
-$Science = \beta_0 + \beta_1 ?? Math$
+$Science = \beta_0 + \beta_1 × Math + \epsilon$
 
 ```{r}
-model1 <- lm(data = scores, science ~ math)
-summary(model1)
+fit1 <- lm(data = scores, science ~ math)
+summary(fit1)
 ```
 
 How to interpret such an output?
 
-Intercept is our $??_0$ and math is our $??_1$, the coefficient before the independent variable Math score. So, we can write a regression equation (try it).
+Intercept is our $\beta_0$ and math is our $\beta_1$, the coefficient before the independent variable Math score. So, we can write a regression equation (try it).
 
 ```{r}
 ggplot(data = scores, aes(x = math, y = science)) + 
@@ -108,7 +120,7 @@ ggplot(data = scores, aes(x = math, y = science)) +
 ```
 
 
-2. The coefficient $??_1$ shows how Science scores changes on average when Math scores increases by one unit. Now test its significance.
+2. The coefficient $\beta_1$ shows how Science scores changes on average when Math scores increases by one unit. Now test its significance.
 
 *H0*: the true correlation coefficient equals to 0 (Math score does not affect Science score).
 
@@ -118,16 +130,91 @@ Should we reject our null hypothesis at the 5% significance level? Make conclusi
 
 3. Multiple R-squared is $R^2$, a coefficient of determination that shows what share of the reality our model explains. A more formal way to interpret it: it shows a share of variance of a dependent variable that is explained by an independent one.
 
-Now we can predict 
+Let's look at **predicted variables** and **residual**.
+First, we will obtain them from the model and add to our data set `score`.
+```{r}
+scores$fit1.predict <- fit1$fitted.values   # Save the predicted values
+scores$fit1.residuals <- fit1$residuals # Save the residual values
+scores %>% select (science, fit1.predict, fit1.residuals) %>%
+  head()
+```
 
 ```{r}
-predict(model1, newdata = data.frame(math = c(44,55,66)))
+ggplot(data = scores, aes(x = math, y = science)) + 
+  geom_point() +
+  labs(x = "Math score",
+       y = "Science score",
+       title = "Students' scores") +
+  geom_point(aes(y = fit1.predict), shape = 1, color ="red") + # Add the predicted values
+  geom_segment(aes(xend = math, yend = fit1.predict)) +
+  theme_bw()
 ```
+
+Or, use data directly from the model:
+```{r}
+ggplot(data = fit1, aes(x = fit1$fitted.values, 
+                        y = fit1$residuals)) +
+  geom_point() +
+  geom_line(aes(y = 0)) +
+  labs(title = "Science ~ Math",
+       x = "fitted values",
+       y = "residuals") +
+  theme_bw()
+```
+
+Now we can predict `science` for a new dataset. 
+
+```{r}
+predict(fit1, newdata = data.frame(math = c(44,55,66)))
+```
+
+
+### Multivariate linear regression
+
+You can include more variables as predictors for `science`, such as 
+$Science = \beta_0 + \beta_1 × Math + \beta_2 × Read + \epsilon$
+
+```{r}
+fit2 <- lm(data = scores, science ~ math + read)
+summary(fit2)
+#fit3 <- lm(data = scores, science ~ math + socst + read + write)
+# or just fit3 <- lm(data = scores, science ~ .)
+```
+
+Write down the coefficients of your model ($\beta_0, \beta_1, ...$:
+
+```{r}
+fit2$coefficients
+```
+
+* Which of the predictor variables are significant?  
+
+From the summary() we can see that both Math and Read are significant predictors for Science at 5% significance level (p-value of Math is 9.90e-08, p-value of Read is 1.12e-07).
+
+* Is this model fit?
+
+Multiple R2 closer to 1 indicates that the model explains the large part of the variance of `Science` and hence is a good fit. In this case, the value is 0.4782 and hence the model is a moderate fit.
+
+Plot fit2:
+* Residuals VS Fitted plot 
+```{r}
+plot(fit2, which=1)
+```
+
+Residuals are expected to be random in nature and there should not be any pattern in the graph. The average of the residual plot should be close to zero. From the above plot, we can see that the red trend line is almost at zero.
+
+* Q-Q Plot
+```{r}
+qqnorm(resid(fit2)) # or fit2$residuals
+qqline(resid(fit2))
+# or plot(fit2, which=2)
+```
+Q-Q plot shows whether the residuals are normally distributed. Ideally, the points should be on the qqline. In the above plot, we see that most of the points are on the line except some points at towards the end.
 
 ## Problem set B
 Today we will use data from the linguistic database. The most popular linguistic databases are the linguistic typology database WALS (Word Atlas of Language Structures) and LAPSyD (Lyon-Albuquerque Phonological Systems Database).
 
-Let us know whether the languages with [ejective](https://en.wikipedia.org/wiki/Ejective_consonant) sounds (ru: ??????????????????) have in average more consonants than others. These are data from the LAPSyD databasem: [http://goo.gl/0btfKa](http://goo.gl/0btfKa).
+Let us know whether the languages with [ejective](https://en.wikipedia.org/wiki/Ejective_consonant) sounds (ru: `abruptiv`) have in average more consonants than others. These are data from the LAPSyD databasem: [http://goo.gl/0btfKa](http://goo.gl/0btfKa).
 
 ### 1.1 
 Visualise data like this:
@@ -150,18 +237,36 @@ Is the mean difference between groups is statistically significant?
 # Provide the code for statistical testing below:
 ```
 
+## Regression with dummy variables (categorial predictors)
+
+A **dummy variable** is a numerical variable used in regression analysis to represent subgroups in the dataset.  In the simplest case (two groups), we would use a `0, 1` dummy variable: an obsevation is given a value of `0` if it is in the reference group and `1` if it is in another group. 
+
+$y_i = \beta_0 + \beta × Z_i + \epsilon_i$
+ 
+where:
+$y_i$ is outcome score of $i^{th}$ unit,  
+$\beta_0$ is coefficient for the intercept,   
+$\beta_1$ is coefficient for the slope,  
+$Z_i$ is:  
+`0` if the $i^{th}$ unit is in the reference group;  
+`1` if the $i^{th}$ unit is in another group;  
+$\epsilon_i$ is residual for the $i^{th}$ unit.  
+
+Dummy variables are useful because they allow one to use a single regression equation to represent multiple groups. The dummy variables act like `switches' that turn various parameters on and off in an equation.  
+
 ### 1.5
 Make a linear regression that predicts the number of consonants by the presence/absense of ejectives. Write down the formula for the regression line.
 ```{r}
 
 ```
 
-Did you get the point? What is the difference between means values and coefficients of the regression in simple model withe only one dummy-predictor?
+Did you get the point? What is the difference between means values and coefficients of the regression in simple model with only one dummy-predictor?
+
 
 ## Problem set C
 This set is based on (Coretta 2017, https://goo.gl/NrfgJm). This dissertation deals with the relation between vowel duration and aspiration in consonants. Author carried out a data collection with 5 natives speakers of Icelandic. Then he extracted the duration of vowels followed by aspirated versus non-aspirated consonants. Check out whether the vowels before consonants of different places of articulation are significantly different.
 
-Use read.csv("https://goo.gl/7gIjvK") for downloading data.
+Use the [link](https://raw.githubusercontent.com/LingData2019/LingData2020/master/data/icelandic.csv) to download the data.
 
 ### 2.1
 Create the plot like this. 
@@ -249,9 +354,39 @@ Fit a multiple regression model predicting cdi from all predictors in a dataset.
 ### 3.5
 Create a facet scatterplot in order to visualize the association of `cdi` and `tv.hours` by `book.reading` groups.
 ```{r, eval=FALSE}
+tv1 <- tv %>% mutate(book.reading=factor(book.reading))
+model3 <- lm(data=tv1, cdi ~ tv.hours + book.reading)
+summary(model3)
 tv %>% 
   ggplot(aes(tv.hours, cdi))+
   geom_smooth(method="lm")+
   geom_point()+
   facet_wrap(~tv$book.reading)
 ```
+
+
+#### Tips
+
+* ggpairs and ggcorr (correlograms) https://www.r-graph-gallery.com/199-correlation-matrix-with-ggally.html
+
+* You can use `augment()` from the library(broom) to represent data from your model, standardised residuals, etc. as data frame.
+
+```{r}
+library(broom)
+fit4 <- lm(data = scores, science ~ math) %>% 
+       augment()
+summary(fit4)
+```
+
+* Tips on the model plots 
+```{r}
+#plot(fit2)
+```
+which=2. [Q-Q plot](https://data.library.virginia.edu/understanding-q-q-plots/) [documentaion](https://www.rdocumentation.org/packages/stats/versions/3.6.2/topics/plot.lm)
+  -- allows one to assess if a set of data plausibly came from some theoretical distribution, such as a normal one.
+  
+which=3. Scale-Location (Spread-Location)  
+  -- allows one to check the assumption of equal variance (homoscedasticity). The ideal plot is a horizontal line with equally (randomly) spread points.
+  
+which=4. Residuals vs Leverage   
+  -- allows one to reveal influential observations, if any. When cases are outside of the Cook’s distance (dashed line), the cases are influential to the regression results. The regression results will be altered if we exclude those cases.  
