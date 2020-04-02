@@ -3,8 +3,14 @@ title: "HW 3. Confidence interval, ANOVA, chi-squared and correlations"
 author: "Ilya Schurov, Olga Lyashevskaya, George Moroz, Alla Tambovtseva"
 date: 'Deadline: 24 February, 23:59'
 output:
-  html_document: default
+  
   pdf_document: default
+  html_document: default
+header-includes:
+  - \usepackage{hyperref}
+  - \hypersetup{
+    colorlinks = true,
+    urlcolor = {blue}}
 ---
 
 ```{r setup, include=FALSE}
@@ -24,13 +30,6 @@ We continue using dataset from the study of [Fabian Tomaschek et al.](https://ww
 * `Exponent` - inflectional exponent of verbs: `-t`, `-en`, `-n`. By default: `-t`. 
 * `Frequency` - log-transformed frequency of verbs in the corpus.
 
-```{r}
-dat <- read.csv("http://math-info.hse.ru/f/2018-19/ling-data/dur_word_frequency.csv")
-```
-
-```{r}
-dat
-```
 ### 1.1 Confidence intervals
 #### 1.1.1 Explicit formula
 
@@ -43,7 +42,7 @@ $$
 Use it to find 95% confidence intervals for population means of word durations for fast and slow conditions. (You have to obtain two confidence intervals, one for fast condition and another for slow condition.)
 
 ```{r ci-formula}
-
+# YOUR CODE HERE
 ```
 
 #### 1.1.2 Function `MeanCI`
@@ -51,7 +50,7 @@ Use it to find 95% confidence intervals for population means of word durations f
 Use function `MeanCI` from package `DescTools` to find the same confidence intervals.
 
 ```{r ci-meanci}
-
+# YOUR CODE HERE
 ```
 
 (The results will be a little bit different compared to the result of the previous section due to the fact that the formula above is only approximation and `MeanCI` uses a more precise formula. However, for our data the difference is very small.)
@@ -61,7 +60,7 @@ Use function `MeanCI` from package `DescTools` to find the same confidence inter
 You can also use function `t.test` for one sample to obtain the confidence interval for a mean. Apply `t.test` to the same variables as in 1.1.1 and extract the confidence intervals from the output. Does it coincide with the results of sections 1.1.1 or 1.1.2?
 
 ```{r ci-ttest}
-
+# YOUR CODE HERE
 ```
 
 
@@ -70,7 +69,7 @@ You can also use function `t.test` for one sample to obtain the confidence inter
 Use function `MeanCI` to find 99% confidence intervals for the same variables as in 1.1.1. Are they wider or narrower than 95% CI's?
 
 ```{r ci-99}
-
+# YOUR CODE HERE
 ```
 
 
@@ -81,7 +80,7 @@ Use function `MeanCI` to find 99% confidence intervals for the same variables as
 We will consider only observations obtained in `slow` conditions in this section, so you have to filter your dataset appropriately. Filter out only observations with `slow` condition and save resulting dataset as `dat_slow`.
 
 ```{r}
-# YOUR ANSWER IS HERE
+# YOUR CODE HERE
 ```
 
 
@@ -93,14 +92,15 @@ significant difference between segment durations in these three groups.
 
 First of all, state the null hypothesis and the alternative you consider. (Note that the alternative hypothesis of ANOVA states that at least two groups are different).
 
-```
-```
+
+_(your answer here)_
 
 #### 1.2.2. `aov()`
 
 Use the `summary` of `aov()` to perform an ANOVA.
 
 ```{r anova-segment}
+# YOUR CODE HERE
 ```
 
 #### 1.2.3 Interpreting the ANOVA results
@@ -110,8 +110,8 @@ conclude that there is significant difference (i.e. difference in the
 corresponding population means) between these three groups at 3% significance
 level?
 
-```
-```
+_(your answer here)_
+
 
 #### 1.2.4 Pairwise t-test
 Use two-sample t-test to compare segment duration for expontents _-t_ and _-en_.
@@ -119,15 +119,21 @@ Can you conclude, according to the results of t-test, that there is significant
 difference between these two groups at 3% significance level?
 
 ```{r pair-ttest}
+# YOUR CODE HERE
 ```
 
 How can you explain a contradiction (if any) of this the outcome with outcome of
 1.2.3?
 
+_(your answer here)_
+
+
+
 #### 1.2.5 ANOVA: Word durations
 Repeat 1.2.1, 1.2.2 and 1.2.3 for word durations instead of segment durations.
 
 ```{r anova-word}
+# YOUR CODE HERE
 ```
 
 #### 1.2.6 Post-hoc testing
@@ -148,18 +154,22 @@ that corresponds to 5% significance level.)
 Analyse p-values provided by the Tukey test to see if there is any pair of groups in which the difference is not significant at 3% significance level. 
 
 ```{r tuckey}
+# YOUR CODE HERE
 # TukeyHSD(aov(....), "Exponent")
 ```
 
 #### 1.2.7 Comparison with pairwise t-test
 Compare p-value for the difference between segment durations for  _-t_ and _-en_ Exponents, given by `TukeyHSD`, with the result of 1.2.4. How can you explain the difference between these p-values?
 
+_your answer here_
+
 #### 1.2.8 Reporting the results
 
 Write down you general conclusions for 1.2.1-1.2.7. Report the full name of the ANOVA (one-way independent ANOVA), its p-value, the name of post-hoc test (if used) as well as its results: p-value and the difference between the means (with CI) for those pair of groups that you want to report.
 
-```
-```
+_your answer here_
+
+
 
 ### 1.3 Summary in a `dplyr` style
 
@@ -168,6 +178,10 @@ require(tidyverse)
 ```
 
 Group you data by exponent and condition and calculate a mean, a median, and a standard deviation of word duration. You have to use `dplyr` (`tidyverse`) for these operations.
+
+```{r}
+# YOUR CODE HERE
+```
 
 ## Part 2. Lexical decision
 
@@ -218,9 +232,13 @@ How many correct answers were provided by native English speakers? And by speake
 
 State the method that is applicable to check whether the correctness of decision (`Correct`) depends on the person's native language (`NativeLanguage`). Explain your choice.
 
+_(your answer here)_
+
 #### 2.1.3 Hypothesis
 
 State the null hypothesis you are going to test. State the alternative hypothesis as well.
+
+_(your answer here)_
 
 #### 2.1.4 Analysis
 
@@ -234,6 +252,8 @@ Perform the analysis using R. Provide your R code.
 #### 2.1.5 Interpretation
 
 Based on the output obtained, can you conclude that the correctness of decision depends on the person's native language? Explain your answer.
+
+_(your answer here)_
 
 ### 2.2 Lexical decision: short words compared
 
@@ -268,9 +288,13 @@ Choose an appropriate statistical method to answer the question stated at the be
 
 State the null hypothesis you tested. State the alternative hypothesis as well.
 
+_(your answer here)_
+
 ##### 2.2.4.2 Conclusion
 
 Based on the output obtained, can you conclude that the reaction time differs for different words? Explain your answer.
+
+_(your answer here)_
 
 ### 2.3 Lexical decision: reaction time and word features
 
@@ -292,6 +316,8 @@ Check whether the correlation between reaction time and word frequency is statis
 
 State the null hypothesis you are going to test. State the alternative hypothesis.
 
+_(your answer here)_
+
 #### 2.3.2.2 Testing
 
 Test the hypothesis stated above using R. Provide your R code.
@@ -304,6 +330,10 @@ Test the hypothesis stated above using R. Provide your R code.
 
 Based on the output obtained, can you conclude that the reaction time is associated with word frequency? Explain your answer.
 
+_(your answer here)_
+
 #### 2.3.2.4 Reporting
 
 Report the correlation coefficient obtained. If it is statistically significant, interpret its value: state the direction of association (positive or negative) and the strength of association (approximately, strong or weak). There are no strict rules how to interpret the strength, for example, see [here](https://www.westga.edu/academics/research/vrc/assets/docs/scatterplots_and_correlation_notes.pdf) (p.9).
+
+_(your answer here)_
