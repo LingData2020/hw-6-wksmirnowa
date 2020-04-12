@@ -1,9 +1,9 @@
 ---
 title: "Lab 10. Dimensionality reduction. PCA"
 output:
-  pdf_document: default
   html_document:
     df_print: paged
+  pdf_document: default
 editor_options:
   chunk_output_type: console
 ---
@@ -31,7 +31,7 @@ Sometimes you have a huge amount of variables. So, to make your data profitable 
 ### 2. Data
 This is a dataset from [Huttenlocher, Vasilyeva, Cymerman, Levine 2002]. The authors analysed 46 pairs of mothers and children (aged from 47 to 59 months, mean age -- 54). They recorded and transcribed 2 hours from each child per day. In their study, they compared the number of noun phrases per utterance in mother speech to the number of noun phrases per utterance in child speech.
 ```{r}
-df <- read_csv("https://raw.githubusercontent.com/agricolamz/r_on_line_course_data/master/Huttenlocher_2001.csv")
+df <- read_csv("https://raw.githubusercontent.com/LingData2019/LingData2020/master/data/Huttenlocher.csv")
 
 df %>%
   ggplot(aes(mother, child))+
@@ -47,53 +47,91 @@ PCA is essentially a rotation of the coordinate axes, chosen such that each succ
 fit <- lm(child~mother, data = df)
 df$model <- predict(fit)
 
-df %>%
-  ggplot(aes(mother, child))+
-  geom_line(aes(mother, model), color = "blue")+
-  geom_point(color = "darkgreen", size = 3)+
-  stat_ellipse(linetype=2)+
+p1 <- df %>%
+  ggplot(aes(mother, child)) +
+  geom_line(aes(mother, model), color = "blue") +
+  geom_point(color = "darkgreen", size = 3) +
+  stat_ellipse(linetype=2) +
+  scale_y_continuous(breaks = c(1.2, 1.4, 1.6, 1.8, 2.0)) +
   theme_bw()
+p1
 ```
 
 We used regression for predicting value of one variable by another variable.
 
 ```{r}
-
-df %>%
- ggplot(aes(mother, child))+
-stat_ellipse(linetype=2)+
-geom_segment(aes(x=min(mother), y=1.8, xend=2, yend=1.8), size=0.5, color = "red", arrow =  arrow(angle = 10, type = "closed", ends = "first"))+
-geom_segment(aes(x=2, y=min(child), xend=2, yend=1.8), size=0.5, color = "red", arrow =  arrow(angle = 10, type = "closed"))+
-geom_line(aes(mother, model), color = "blue")+
-geom_point(color = "darkgreen", size = 3)+
-scale_y_continuous(breaks = c(1.2, 1.4, 1.6, 1.8, 2.0))+
- theme_bw()+
-theme(axis.text.x = element_text(color=c("black", "black", "black", "red", "black"), size=c(9, 9, 9, 14, 9)),
+p1 +
+# plot red arrows  
+  geom_segment(aes(x=min(mother), y=1.8, xend=2, yend=1.8), size=0.5, color = "red",
+               arrow =  arrow(angle = 10, type = "closed", ends = "first")) +
+  geom_segment(aes(x=2, y=min(child), xend=2, yend=1.8), size=0.5, color = "red",
+               arrow =  arrow(angle = 10, type = "closed")) +
+# pin two points on axes  
+  theme(axis.text.x = element_text(color=c("black", "black", "black", "red", "black"), size=c(9, 9, 9, 14, 9)),
       axis.text.y = element_text(color=c("black", "black", "black", "red", "black", "black"), size=c(9, 9, 9, 14, 9, 9)))
 ```
 
 In PCA we change coordinate system and start predicting variables' values using less variables.
 
-```{r}
+```{r echo=FALSE, warning=FALSE}
+df <- read_csv("https://raw.githubusercontent.com/LingData2019/LingData2020/master/data/Huttenlocher.csv")
+
 pca <- prcomp(df)
-pca$rotation
-pca$center
+PC1 <- data.frame(t(t(matrix(c(seq(-1, 1, by = 0.1), rep(0, 41)), ncol = 2) %*% t(pca$rotation)) + pca$center))
+ 
+df %>%
+  ggplot(aes(mother, child))+
+  stat_ellipse(linetype=2)+
+  geom_segment(aes(x=1, y=1.9, xend=2, yend=1.9), size=0.5, color = "red", arrow =  arrow(angle = 10, type = "closed", ends = "first"))+
+  geom_segment(aes(x=2, y=1, xend=2, yend=1.9), size=0.5, color = "red", arrow =  arrow(angle = 10, type = "closed", ends = "first"))+
+  geom_line(data = PC1, aes(mother, child), color = "blue", arrow =  arrow(angle = 10, type = "closed"))+
+  geom_point(color = "darkgreen", size = 3)+
+  scale_y_continuous(breaks = c(1.2, 1.6, 1.9, 2.0))+
+  theme_bw()+
+  theme(axis.text.x = element_text(
+    color=c("black", "black", "red", "black"),
+    size=c(9, 9, 14, 9)),
+    axis.text.y = element_text(
+      color=c("black", "black", "red", "black"),
+      size=c(9, 9, 14, 9)))+
+  annotate("text", x = 2.38, y = 2.3, label = "PC1")
 ```
 
-The number of the PCs is always equal to the number of variables. 
+The blue line is *the first Princple Component* (and it is NOT a regression line). The number of the PCs is always equal to the number of variables. So we can draw the second PC:
+
+```{r echo=FALSE, warning=FALSE}
+PC2 <- data.frame(t(t(matrix(c(rep(0, 41), seq(-0.7, 0.7, by = 0.1)), ncol = 2) %*% t(pca$rotation)) + pca$center))
+
+df %>%
+  ggplot(aes(mother, child))+
+  stat_ellipse(linetype=2)+
+  geom_line(data = PC1, aes(mother, child), color = "blue", arrow =  arrow(angle = 10, type = "closed"))+
+  geom_line(data = PC2, aes(mother, child), color = "blue", arrow =  arrow(angle = 10, type = "closed", ends = "first"))+
+  geom_segment(aes(x=1, y=1.9, xend=2, yend=1.9), size=0.5, color = "red", arrow =  arrow(angle = 10, type = "closed", ends = "first"))+
+  geom_segment(aes(x=2, y=1, xend=2, yend=1.9), size=0.5, color = "red", arrow =  arrow(angle = 10, type = "closed", ends = "first"))+
+  geom_point(color = "darkgreen", size = 3)+
+  scale_y_continuous(breaks = c(1.2, 1.6, 1.9, 2.0))+
+  theme_bw()+
+  theme(axis.text.x = element_text(color=c("black", "black", "red", "black"), 
+    size=c(9, 9, 14, 9)),
+    axis.text.y = element_text(color=c("black", "black", "red", "black"),
+      size=c(9, 9, 14, 9)))+
+  annotate("text", x = 2.38, y = 2.3, label = "PC1")+
+  annotate("text", x = 1.39, y = 2.15, label = "PC2")
+```
 
 The main point of PCA is that if cumulative proportion of explained variance is high we can drop some PCs. So, we need know the following things:
 
 * What is the cumulative proportion of explained variance?
 ```{r, echo = TRUE}
+df <- read_csv("https://raw.githubusercontent.com/LingData2019/LingData2020/master/data/Huttenlocher.csv")
 summary(prcomp(df))
 ```
 
-So, PC1 explains only 78.9% of the variance in our data.
+We see that PC1 explains only 78.9% of the variance in our data.
 
 * How PCs are rotated comparing to the old axes?
 ```{r, echo = TRUE}
-#df <- read.csv("https://raw.githubusercontent.com/agricolamz/r_on_line_course_data/master/Huttenlocher_2001.csv")
 prcomp(df)
 ```
 
@@ -101,13 +139,12 @@ So the formula for the first component rotation is
 $$PC1 = 0.6724959 \times child + 0.7401009  \times mother$$
 The formula for the second component rotation is
 $$PC2 = -0.7401009 \times child + 0.6724959  \times mother$$
-
-From now we can change the axes. We use the `autoplot()` function from `ggfortify` package to produce the graph:
+Now we can change the axes. We use the `autoplot()` function from `ggfortify` package to produce the graph:
 ```{r}
 autoplot(pca,
          loadings = TRUE,
-         loadings.label = TRUE)+
-  theme_bw()+
+         loadings.label = TRUE) +
+  theme_bw() +
   stat_ellipse(linetype=2)
 ```
 
