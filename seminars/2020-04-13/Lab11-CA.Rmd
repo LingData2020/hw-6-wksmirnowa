@@ -1,0 +1,145 @@
+---
+title: 'Lab11. Correspondence analysis: CA and MCA'
+editor_options:
+  chunk_output_type: console
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message=FALSE)
+```
+
+```{r 0.0, message=FALSE, warning=FALSE}
+# library(FactoMineR)
+library(tidyverse)
+library(ca)
+library(vcd)
+theme_set(theme_bw())
+```
+
+## Grammatical profiles of Russian verbs    
+
+In their article "Predicting Russian aspect by frequency across genres" Eckhoff et al. (2017) ask whether the aspect of individual verbs can be predicted based on the statistical distribution of their inflectional forms. The dataset contains a sample of sentences taken from the Russian National Corpus. Each verb was annotated by Mood&Tense, Voice, Aspect and other grammatical features.    
+
+```{r 1.01}
+ru <- read.csv('https://raw.githubusercontent.com/agricolamz/2018-MAG_R_course/master/data/RNCverbSamples_journ.csv', sep=';')
+str(ru)
+```
+
+First, we will do some preprocessing. Here, we join future passives with other passive participles.
+```{r 1.02}
+ru$MoodTense[ru$Voice == 'pass' & ru$MoodTense == 'indicfut'] <- "partcppast"
+```
+
+Let's look at top-10 of verbs in the dataset
+```{r 1.03}
+ru %>% 
+  group_by(LemmaTranslit) %>% 
+  summarize(count=n()) %>%
+  arrange(desc(count))
+```
+
+### 1.1 Grammatical profiles
+Grammatical profile is a vector that contains the number (or the ratio) of inflectional forms for individual lemmas.
+We can pick up a subset containing only forms of the verb _chitat'_ 'read'.
+```{r 1.1.1}
+ru.chit <- droplevels(subset(ru, LemmaTranslit == "chitat'"))
+```
+
+This is the grammatical profile of _chitat'_
+```{r 1.1.2}
+print("The grammatical profile of chitat'")
+print(table(ru.chit$MoodTense))
+print(prop.table(table(ru.chit$MoodTense))*100)
+```
+
+Now we will calculate the grammatical profile of each verb (which has more than 50 occurrences in our data set) and split the resulting table into two parts: grammatical forms themselves (numeric data, see ttdata below) and metadata (categories labeled in the RNC or by annotators: lemma, trasitivity, aspect).
+
+Table of tense-mood distribution per lemma:
+```{r 1.1.3}
+tab = table(ru$LemmaTranslit,ru$MoodTense)
+#turns the table into a data frame
+t = as.data.frame.matrix(tab)
+#adds lemmas as a separate column
+t$LemmaTranslit = row.names(t)
+#adds metadata columns for transitivity and aspect, assuming that these are stable per lemma - just picking the first value per lemma
+t$Trans = as.factor(unlist(lapply(t$LemmaTranslit, function(x) names(table(droplevels(subset(ru, LemmaTranslit == x)$Trans)))[1])))
+t$Asp = as.factor(unlist(lapply(t$LemmaTranslit, function(x) names(table(droplevels(subset(ru, LemmaTranslit == x)$Aspect)))[1])))
+```
+
+Label the biaspectuals 'b':
+```{r 1.1.4}
+levels(t$Asp) <- c('i','p','b')
+t[t$LemmaTranslit=="ispol'zovat'",]$Asp <- 'b'
+t[t$LemmaTranslit=="obeschat'",]$Asp <- 'b'
+```
+
+Pick out the lemmas with 50 or more occurrences and split the data:
+```{r 1.1.5}
+tt <- t[rowSums(t[,1:9]) >= 50,]
+```
+
+## 1.2 t-SNE visualization (for numeric variables)   
+
+The idea behind this kind of visualisation is to plot different clusters as far from each other as possible (preserving the distance between each pair of clusters). Within each cluster, the points are distributed to show the internal structure of the cluster. Note that unlike PCA, in t-SNE the points' coordinates cannot be interpreted directly (there is no linear mapping of one plane to another), and linear correlations can be misleading.  
+
+```{r 1.2}
+library(Rtsne)
+ru.tsne <- Rtsne(tt[,1:9],
+                 dims=2, 
+                 perplexity=50, 
+                 verbose=TRUE, 
+                 max_iter = 2000)
+
+tt <- cbind(tt, ru.tsne$Y)
+
+tt %>% 
+  ggplot(aes(`1`, `2`, label = Asp, color = Asp))+
+  geom_text()
+```
+
+## CA 
+```{r}
+tt_ca <- ca(tt[,1:9])
+
+tt_col <- data.frame(tt_ca$colcoord)
+tt_col$rows <- rownames(tt_ca$colcoord)
+
+tt_row <- data.frame(tt_ca$rowcoord)
+tt_row$rows <- rownames(tt_ca$rowcoord)
+
+tt_col %>% 
+  ggplot(aes(Dim1, Dim2))+
+  geom_hline(yintercept = 0, linetype = 2)+
+  geom_vline(xintercept = 0,linetype = 2)+
+  geom_point(data = tt_row, aes(Dim1, Dim2), color = "darkblue")+
+  geom_text(aes(label = rows), color = "red")+
+  labs(x = "Dim1 (39.06%)",
+       y = "Dim2 (19.72%)")
+```
+
+## MCA 
+
+Dataset and description from [paper by Natalia Levshina](https://goo.gl/v6AmVj). Modern standard Dutch has two periphrastic causatives with the infinitive: the constructions with doen ‘do’ and laten ‘let’. The study is based on an 8-million token corpus of Netherlandic and Belgian Dutch. After the manual cleaning, there were left with 6,808 observations, which were then coded for seven semantic, syntactic, geographical and thematic variables.
+
+* Aux --- a factor that specifies the causative auxiliary with levels laten and doen.
+* Country --- a factor with levels NL (the Netherlands) and BE (Belgium).
+* Causation --- a factor that describes the type of causation with levels Affective, Inducive, Physical and Volitional
+* EPTrans --- a factor that specifies the transitivity of the Effected Predicate with levels Intr (intransitive) and Tr (transitive).
+* EPTrans1 --- a factor with levels Intr and Tr. It is very similar to the previous one, except for a few observations.
+
+```{r}
+dutch_caus <- read.csv("https://goo.gl/2yAR3T")
+MCA <- MASS::mca(dutch_caus[,-1])
+MCA
+dutch_caus <- cbind(dutch_caus, MCA$rs)
+variables <- as_data_frame(MCA$cs)
+variables$var_names <- rownames(MCA$cs)
+dutch_caus %>% 
+  ggplot(aes(`1`, `2`))+
+  geom_point(aes(color = Aux))+
+  stat_ellipse(aes(color = Aux))+
+  geom_text(data = variables, aes(`1`, `2`, label = var_names))+
+  theme_bw()+
+  scale_x_continuous(limits = c(-0.015, 0.02))
+```
